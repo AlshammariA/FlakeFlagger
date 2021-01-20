@@ -59,18 +59,22 @@ def vexctorizeTokenWithInformationGian(data,flakyStatus,IG_result):
     matrix_token = pd.DataFrame(train.toarray(), columns = vocabualry_vectorizer.get_feature_names())
     matrix_with_FlakyStatus = pd.concat([matrix_token, flakyStatus.reindex(matrix_token.index)], axis=1)
     
-    # reduce the number of token in IG computation ..    
+    # reduce the number of token in IG computation ..     
     matrix_with_FlakyStatus.drop([col for col, val in matrix_with_FlakyStatus.sum().iteritems() if val < 2], axis=1, inplace=True)
-
+    
+    print ("start Calculating the information gain for each token ")
     counter = 0
     for col in matrix_with_FlakyStatus.columns:
         counter = counter + 1            
         if str(col) != 'flakyStatus':
-            if (counter % 25 == 0):
-                print (str(counter) + " tokens have been processed out of "+str(len(matrix_with_FlakyStatus.columns)))
+            if (counter % 10 == 0):
+                processed_token = (counter/len(matrix_with_FlakyStatus.columns))*100
+                sys.stdout.write('\r')
+                sys.stdout.write(f" --> {int(processed_token)}  {'% of the tokens have been processed'} ")
+                sys.stdout.write('\r')
             IG = InfoGain(matrix_with_FlakyStatus,col,'flakyStatus')          
             IG_result = IG_result.append(pd.Series([col,"token",IG], index=IG_result.columns ), ignore_index=True)        
-    print ("Done from Token IG ... ")       
+    print ("Done from calculating the IG per token                   ")       
     return IG_result
     
     
@@ -85,12 +89,16 @@ def calculateOtherFeaturesIG(data,unwantedColumns,processedData,IG_result):
             IG = InfoGain(new_data,col,'flakyStatus')
             counter = counter + 1
             if (counter % 5 == 0):
-                print (str(counter) + " features have been processed ... ")
+                sys.stdout.write('\r')
+                sys.stdout.write(f" --> {int(counter)}  {'features have been processed ... '}")
+                sys.stdout.write('\r')
+
+                #print (str(counter) + " features have been processed ... ")
             if(col not in processedData):
                 IG_result = IG_result.append(pd.Series([col,"JavaKeyWords",IG], index=IG_result.columns ), ignore_index=True)
             else:
                 IG_result = IG_result.append(pd.Series([col,"FlakeFlagger",IG], index=IG_result.columns ), ignore_index=True)
-    print ("Done from otherFeatures IG ... ")
+    print ("Done from calculating the IG for Flakeflagger and other features ... ")
     return IG_result
     
    
