@@ -1,0 +1,51 @@
+@Test public void testCalculatePermissions(){
+  PrivilegeBitsProvider provider=new PrivilegeBitsProvider(root);
+  Map<PrivilegeBits,Long> simple=new HashMap<PrivilegeBits,Long>();
+  simple.put(PrivilegeBits.EMPTY,Permissions.NO_PERMISSION);
+  simple.put(provider.getBits(JCR_READ),Permissions.READ);
+  simple.put(provider.getBits(JCR_LOCK_MANAGEMENT),Permissions.LOCK_MANAGEMENT);
+  simple.put(provider.getBits(JCR_VERSION_MANAGEMENT),Permissions.VERSION_MANAGEMENT);
+  simple.put(provider.getBits(JCR_READ_ACCESS_CONTROL),Permissions.READ_ACCESS_CONTROL);
+  simple.put(provider.getBits(JCR_MODIFY_ACCESS_CONTROL),Permissions.MODIFY_ACCESS_CONTROL);
+  simple.put(provider.getBits(REP_READ_NODES),Permissions.READ_NODE);
+  simple.put(provider.getBits(REP_READ_PROPERTIES),Permissions.READ_PROPERTY);
+  simple.put(provider.getBits(REP_USER_MANAGEMENT),Permissions.USER_MANAGEMENT);
+  simple.put(provider.getBits(JCR_MODIFY_PROPERTIES),Permissions.SET_PROPERTY);
+  simple.put(provider.getBits(REP_ADD_PROPERTIES),Permissions.ADD_PROPERTY);
+  simple.put(provider.getBits(REP_ALTER_PROPERTIES),Permissions.MODIFY_PROPERTY);
+  simple.put(provider.getBits(REP_REMOVE_PROPERTIES),Permissions.REMOVE_PROPERTY);
+  simple.put(provider.getBits(REP_INDEX_DEFINITION_MANAGEMENT),Permissions.INDEX_DEFINITION_MANAGEMENT);
+  for (  PrivilegeBits pb : simple.keySet()) {
+    long expected=simple.get(pb).longValue();
+    assertTrue(expected == PrivilegeBits.calculatePermissions(pb,PrivilegeBits.EMPTY,true));
+    assertTrue(expected == PrivilegeBits.calculatePermissions(pb,pb,true));
+  }
+  PrivilegeBits add_change=provider.getBits(REP_ADD_PROPERTIES,REP_ALTER_PROPERTIES);
+  long permissions=(Permissions.ADD_PROPERTY | Permissions.MODIFY_PROPERTY);
+  assertTrue(permissions == PrivilegeBits.calculatePermissions(add_change,PrivilegeBits.EMPTY,true));
+  assertTrue(permissions == PrivilegeBits.calculatePermissions(add_change,add_change,true));
+  PrivilegeBits add_rm=provider.getBits(REP_ADD_PROPERTIES,REP_REMOVE_PROPERTIES);
+  permissions=(Permissions.ADD_PROPERTY | Permissions.REMOVE_PROPERTY);
+  assertTrue(permissions == PrivilegeBits.calculatePermissions(add_rm,PrivilegeBits.EMPTY,true));
+  assertTrue(permissions == PrivilegeBits.calculatePermissions(add_rm,add_rm,true));
+  PrivilegeBits ch_rm=provider.getBits(REP_ALTER_PROPERTIES,REP_REMOVE_PROPERTIES);
+  permissions=(Permissions.MODIFY_PROPERTY | Permissions.REMOVE_PROPERTY);
+  assertTrue(permissions == PrivilegeBits.calculatePermissions(ch_rm,PrivilegeBits.EMPTY,true));
+  assertTrue(permissions == PrivilegeBits.calculatePermissions(ch_rm,add_rm,true));
+  PrivilegeBits all=provider.getBits(JCR_ALL);
+  assertFalse(Permissions.ALL == PrivilegeBits.calculatePermissions(all,PrivilegeBits.EMPTY,true));
+  assertTrue(Permissions.ALL == PrivilegeBits.calculatePermissions(all,all,true));
+  PrivilegeBits addChild=provider.getBits(JCR_ADD_CHILD_NODES);
+  assertFalse(Permissions.ADD_NODE == PrivilegeBits.calculatePermissions(addChild,PrivilegeBits.EMPTY,true));
+  assertTrue(Permissions.ADD_NODE == PrivilegeBits.calculatePermissions(PrivilegeBits.EMPTY,addChild,true));
+  PrivilegeBits removeChild=provider.getBits(JCR_REMOVE_CHILD_NODES);
+  assertFalse(Permissions.REMOVE_NODE == PrivilegeBits.calculatePermissions(removeChild,PrivilegeBits.EMPTY,true));
+  assertFalse(Permissions.REMOVE_NODE == PrivilegeBits.calculatePermissions(PrivilegeBits.EMPTY,removeChild,true));
+  PrivilegeBits removeNode=provider.getBits(JCR_REMOVE_NODE);
+  assertFalse(Permissions.REMOVE_NODE == PrivilegeBits.calculatePermissions(removeNode,PrivilegeBits.EMPTY,true));
+  assertFalse(Permissions.REMOVE_NODE == PrivilegeBits.calculatePermissions(PrivilegeBits.EMPTY,removeNode,true));
+  PrivilegeBits remove=provider.getBits(JCR_REMOVE_CHILD_NODES,JCR_REMOVE_NODE);
+  assertFalse(Permissions.REMOVE_NODE == PrivilegeBits.calculatePermissions(remove,PrivilegeBits.EMPTY,true));
+  assertFalse(Permissions.REMOVE_NODE == PrivilegeBits.calculatePermissions(PrivilegeBits.EMPTY,remove,true));
+  assertTrue(Permissions.REMOVE_NODE == PrivilegeBits.calculatePermissions(remove,remove,true));
+}

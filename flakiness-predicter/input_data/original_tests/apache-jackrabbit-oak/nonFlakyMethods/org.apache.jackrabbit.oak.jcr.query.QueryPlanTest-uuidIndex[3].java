@@ -1,0 +1,32 @@
+@Test public void uuidIndex() throws Exception {
+  Session session=getAdminSession();
+  QueryManager qm=session.getWorkspace().getQueryManager();
+  Node testRootNode=session.getRootNode().addNode("testroot");
+  Node n=testRootNode.addNode("node");
+  n.addMixin("mix:referenceable");
+  session.save();
+  String xpath="/jcr:root/testroot/node[@jcr:uuid]";
+  Query q;
+  QueryResult result;
+  RowIterator it;
+  q=qm.createQuery("explain " + xpath,"xpath");
+  result=q.execute();
+  it=result.getRows();
+  assertTrue(it.hasNext());
+  String plan=it.nextRow().getValue("plan").getString();
+  assertEquals("[nt:base] as [a] /* traverse \"/testroot/node\" where " + "([a].[jcr:uuid] is not null) " + "and (issamenode([a], [/testroot/node])) */",plan);
+  q=qm.createQuery(xpath,"xpath");
+  result=q.execute();
+  it=result.getRows();
+  assertTrue(it.hasNext());
+  String path=it.nextRow().getPath();
+  assertEquals("/testroot/node",path);
+  assertFalse(it.hasNext());
+  xpath="/jcr:root/testroot/*[@jcr:uuid]";
+  q=qm.createQuery("explain " + xpath,"xpath");
+  result=q.execute();
+  it=result.getRows();
+  assertTrue(it.hasNext());
+  plan=it.nextRow().getValue("plan").getString();
+  assertEquals("[nt:base] as [a] /* property jcr:uuid " + "where ([a].[jcr:uuid] is not null) " + "and (ischildnode([a], [/testroot])) */",plan);
+}
