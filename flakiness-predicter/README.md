@@ -66,7 +66,7 @@ where the output will be under `result/classification_result/` directory which c
 	3. Balance : `SMOTE`, `undersampling` and `none`(to see the result without balancing)
 	4. Number of folds: `5` or `10`
 	5. Minimum information gain: any value between `0` and `1`
-	6. Number of Tree (for RF): `100-5000'
+	6. Number of Tree (for RF): `100-5000`
 	
 
 
