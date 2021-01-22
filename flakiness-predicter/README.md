@@ -48,15 +48,15 @@ bash predict.sh
 ``` 
 
 will build the prediciation models based on the previous three approaches and perform the classification on our dataset. The input of this step are shown in `predict.sh` as follow:
-1.`result/processed_data_with_vocabulary_per_test.csv`: the extended version of `processed_data.csv` which includes tokens/vocabualry per test.
-2.`input_data/FlakeFlaggerFeaturesTypes.csv`: the types of flakeflagger features (either static or dynamic).
-3.`result/Information_gain_per_feature.csv`: the computed information gain for each feature.
-4.`result/processed_data.csv`: the original collected data from `test-feature-collector`. This is used to map each test to its project for final summary. 
+* `result/processed_data_with_vocabulary_per_test.csv`: the extended version of `processed_data.csv` which includes tokens/vocabualry per test.
+* `input_data/FlakeFlaggerFeaturesTypes.csv`: the types of flakeflagger features (either static or dynamic).
+* `result/Information_gain_per_feature.csv`: the computed information gain for each feature.
+* `result/processed_data.csv`: the original collected data from `test-feature-collector`. This is used to map each test to its project for final summary. 
 
 where the output will be under `result/classification_result/` directory which contains three files:
-1. `prediction_result.csv`: this shows the overall result based on the given selection of arguments.
-2. `prediction_result_per_test`: list of all False positive, False negative, and True positive, for each result.
-2. `prediction_result_by_project`: the confusion matrix split by project (similar to Table III in the paper)
+* `prediction_result.csv`: this shows the overall result based on the given selection of arguments.
+* `prediction_result_per_test`: list of all False positive, False negative, and True positive, for each result.
+* `prediction_result_by_project`: the confusion matrix split by project (similar to Table III in the paper)
 
 
 * Note: We used `minimum IG = 0.01`, `StratifiedKFold` as cross validation type, `Random Forest (RF)` as a classifier, `5000` as minimum number of trees, `SMOTE` as a balance technique, and `10%` as a number of folds. You can change the following arguments to explore the full classification result. The strucutre of these arguments comes as a list (it could be a list of size one argument or more than that). These arguments (shown in `flakeflagger_predicter.py`) are:
