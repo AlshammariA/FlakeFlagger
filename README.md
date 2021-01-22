@@ -1,7 +1,7 @@
 # FlakeFlagger
  
 This repository is linked to our paper "FlakeFlagger: Predicting Flakiness Without Rerunning Tests". The preprint of the paper will be avaiable soon. 
-
+Authors: Abdulrahman Alshammari, Christopher Morris, Michael Hilton, Jonathan Bell
 ## Step 0: Identifying Flaky Tests through Reruns
 The first part of experimental process is to generate a dataset of flaky tests by rerunning the test suite of each project in our
 study set 10,000 times. We ran this experiment set up in a simple cluster, where one machine was designated as the 
