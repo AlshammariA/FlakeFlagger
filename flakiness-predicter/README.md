@@ -1,6 +1,6 @@
 # Flakiness Predicter
 
-This is a step-by-step guideline to use/replicate our classification experiment of FlakeFlagger.   
+This is a step-by-step guideline to use/replicate our classification experiment of flaky tests.   
 
 ## Requirements
 This is a list of all required python packages to run this part:
@@ -27,7 +27,7 @@ There are three main steps to perform the prediction phase.
 ```console
 bash collectTokens.sh
 ```
-This takes the `result/processed_data.csv` and `input_data/original_tests/` as inputs where the output will override `result/processed_data_with_vocabulary_per_test.csv`
+This takes the `result/processed_data.csv` and `input_data/original_tests/` as inputs where the output result will override `result/processed_data_with_vocabulary_per_test.csv`
 
 
 2. Next, the features selection in our classification is based on information gain. To do that, we need to calculate the information gain for each token, java keyword, and FlakeFlagger feature in order to complete the classification. This can be done by run:
@@ -35,7 +35,7 @@ This takes the `result/processed_data.csv` and `input_data/original_tests/` as i
 ```console
 bash informationGain.sh
 ```
-This will re-generate the file `result/Information_gain_per_feature.csv`. Please note that this could take several hours to compute all information gain per each features/token (if we consider that there are more than 30k tokens in our provided dataset).
+This will re-generate the file `result/Information_gain_per_feature.csv`. Please note that this could take several hours to compute the information gain for each features/token (if we consider that there are more than 30k tokens in our provided flaky and non flaky tests).
 
 3. The third step is to build the model based on three approaches which are:
 - Evaluation based on FlakeFlagger features only 
@@ -47,18 +47,24 @@ running the following :
 bash predict.sh
 ``` 
 
-will build the prediciation models based on the previous three approaches and perform the classification on our dataset. The input of this step are shown in `predict.sh`, where the output will be under `result/classification_result/` directory which contains three files:
+will build the prediciation models based on the previous three approaches and perform the classification on our dataset. The input of this step are shown in `predict.sh` as follow:
+1.`result/processed_data_with_vocabulary_per_test.csv`: the extended version of `processed_data.csv` which includes tokens/vocabualry per test.
+2.`input_data/FlakeFlaggerFeaturesTypes.csv`: the types of flakeflagger features (either static or dynamic).
+3.`result/Information_gain_per_feature.csv`: the computed information gain for each feature.
+4.`result/processed_data.csv`: the original collected data from `test-feature-collector`. This is used to map each test to its project for final summary. 
+
+where the output will be under `result/classification_result/` directory which contains three files:
 1. `prediction_result.csv`: this shows the overall result based on the given selection of arguments.
 2. `prediction_result_per_test`: list of all False positive, False negative, and True positive, for each result.
 2. `prediction_result_by_project`: the confusion matrix split by project (similar to Table III in the paper)
 
 
-* Note: We used minimum IG = 0.01, StratifiedKFold, Random Forest, 5000 as minimum number of trees,SMOTE as a balance technique, and 10% as split size. You can change the following arguments to explore the full classification result. The strucutre of these arguments comes as a list ( it could be one selection or a combination of multplie selection as a list) These arguments (shown in `predict.sh`) are:
+* Note: We used `minimum IG = 0.01`, `StratifiedKFold` as cross validation type, `Random Forest` as a classifier, `5000` as minimum number of trees, `SMOTE` as a balance technique, and `10%` as a number of folds. You can change the following arguments to explore the full classification result. The strucutre of these arguments comes as a list (it could be a list of size one argument or more than that). These arguments (shown in `flakeflagger_predicter.py`) are:
 
-1. Classifier: RF, SVM, DT, MLP, NB or KNN 
-2. Fold types: StratifiedKFold and KFold 
-3. Balance : SMOTE, undersampling and none (to see the result without balancing)
-4. Any number of trees, IG, or split size
+	1. Classifier: `RF`, `SVM`, `DT`, `MLP`, `NB`, `KNN` 
+	2. Fold types: `StratifiedKFold` and `KFold`
+	3. Balance : `SMOTE`, `undersampling` and `none`(to see the result without balancing)
+	4. Any number of `trees`, `IG`, or `total folds`
 
 
 
