@@ -59,12 +59,15 @@ where the output will be under `result/classification_result/` directory which c
 2. `prediction_result_by_project`: the confusion matrix split by project (similar to Table III in the paper)
 
 
-* Note: We used `minimum IG = 0.01`, `StratifiedKFold` as cross validation type, `Random Forest` as a classifier, `5000` as minimum number of trees, `SMOTE` as a balance technique, and `10%` as a number of folds. You can change the following arguments to explore the full classification result. The strucutre of these arguments comes as a list (it could be a list of size one argument or more than that). These arguments (shown in `flakeflagger_predicter.py`) are:
+* Note: We used `minimum IG = 0.01`, `StratifiedKFold` as cross validation type, `Random Forest (RF)` as a classifier, `5000` as minimum number of trees, `SMOTE` as a balance technique, and `10%` as a number of folds. You can change the following arguments to explore the full classification result. The strucutre of these arguments comes as a list (it could be a list of size one argument or more than that). These arguments (shown in `flakeflagger_predicter.py`) are:
 
 	1. Classifier: `RF`, `SVM`, `DT`, `MLP`, `NB`, `KNN` 
 	2. Fold types: `StratifiedKFold` and `KFold`
 	3. Balance : `SMOTE`, `undersampling` and `none`(to see the result without balancing)
-	4. Any number of `trees`, `IG`, or `total folds`
+	4. Number of folds: `5` or `10`
+	5. Minimum information gain: any value between `0` and `1`
+	6. Number of Tree (for RF): `100-5000'
+	
 
 
 
