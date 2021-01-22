@@ -24,4 +24,4 @@ that we use in our predictive model. This tooling, including a detailed readme a
 
 
 ## Step 2: Flakiness Prediction 
-We used the machine learning concepts to learn and predict flaky tests. This part is a classification problem. This part is well explained with a readme file in the `flakiness-predicter` directory.
+We used the machine learning concepts to learn and predict flaky tests. This part is a classification problem and it is well explained with a readme file in the `flakiness-predicter` directory.
