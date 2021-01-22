@@ -47,29 +47,38 @@ def get_scores (tn,fp,fn,tp):
     return accuracy, F1, Precision, Recall
 
 #%%
+    
 def generateConfusionMatrixByProject(data,processed_data):
     
-    # output_dir = "result/ConfusionMatrixByModel/"
-    # Path(output_dir).mkdir(parents=True, exist_ok=True)    
-    df_columns = ["IG","features_structure","project","TP","FN","FP","TN","Precision","Recall","F1"]    
+    filter_data = data[['cross_validation', 'balance_type', 'IG_min', 'numTrees', 'classifier','features_structure']]
+    filter_data = filter_data.drop_duplicates()
+    df_columns = ['cross_validation', 'balance_type', 'IG_min', 'numTrees', 'classifier',"features_structure","project","TP","FN","FP","TN","Precision","Recall","F1"]    
     result = pd.DataFrame(columns = df_columns)
     
-    for ig in data.IG_min.unique():
-        data_by_model_IG = data[data["IG_min"] == ig]
-        for feature in data_by_model_IG.features_structure.unique():
-            data_by_confusion_matrix = data_by_model_IG[data_by_model_IG["features_structure"] == feature]
-            for proj in data_by_confusion_matrix.project.unique():
-                sepcific_project = data_by_confusion_matrix[data_by_confusion_matrix["project"] == proj]
+    # add project name to the full result .. 
+    data_with_project_name = processed_data[['project','test_name']]
+    updated_data = pd.merge(data,data_with_project_name,on='test_name',how='left')
+
+    
+    for index, row in filter_data.iterrows():
+        data_per_result = updated_data[(updated_data['cross_validation'] == row['cross_validation']) &
+                                      (updated_data['balance_type'] == row['balance_type']) &
+                                      (updated_data['IG_min'] == row['IG_min']) &
+                                      (updated_data['numTrees'] == row['numTrees']) &
+                                      (updated_data['classifier'] == row['classifier']) &
+                                      (updated_data['features_structure'] == row['features_structure']) ]
+
+        for proj in data_per_result.project.unique():
+                sepcific_project = data_per_result[data_per_result["project"] == proj]
                 TP = FN = FP = 0
                 TP = len(sepcific_project[sepcific_project["Matrix_label"] == "TP"])
                 FN = len(sepcific_project[sepcific_project["Matrix_label"] == "FN"])
                 FP = len(sepcific_project[sepcific_project["Matrix_label"] == "FP"])
                 TN = len(processed_data[processed_data["project"] == proj]) - (TP+FN+FP)
                 accuracy, F1, Precision, Recall = get_scores(TN,FP,FN,TP)
-                result = result.append(pd.Series([ig,feature,proj,TP, FN, FP, TN,str(round(((Precision)*100)))+"%", str(round(((Recall)*100)))+"%",str(round(((F1)*100)))+"%"], index=result.columns ), ignore_index=True)
-    
+                result = result.append(pd.Series([row['cross_validation'],row['balance_type'],row['IG_min'],row['numTrees'],row['classifier'],row['features_structure'],proj,TP, FN, FP, TN,str(round(((Precision)*100)))+"%", str(round(((Recall)*100)))+"%",str(round(((F1)*100)))+"%"], index=result.columns ), ignore_index=True)
+
     return result
-    #result.to_csv(output_dir+'confusion-matrix-by-projects.csv',  index=False)
 
 
 #%%
@@ -103,7 +112,7 @@ def predict_RF_crossValidation(data,k,foldType,balance,classifier,mintree,Featur
         if(balance == "SMOTE"):
             oversample = SMOTE()
             x_train, y_train = oversample.fit_resample(x_train, y_train)
-        elif(balance == "under"):
+        elif(balance == "undersampling"):
             undersampling = RandomUnderSampler()
             x_train, y_train = undersampling.fit_resample(x_train, y_train)
         
@@ -122,17 +131,17 @@ def predict_RF_crossValidation(data,k,foldType,balance,classifier,mintree,Featur
         elif (classifier == 'KNN'):
             model = KNeighborsClassifier(n_neighbors=7)
 
-        model = model.fit(x_train, y_train)
-        preds = model.predict(x_test)
+        final_model = model.fit(x_train, y_train)
+        preds = final_model.predict(x_test)
         
         actual_status = y_test['flakyStatus'].tolist()
         for i in range (0,len(test_names_as_list)):
             if (actual_status[i] == 1 and  preds[i]== 1):
-                result_by_test_name = result_by_test_name.append(pd.Series([ig,mintree,Features_type,test_names_as_list[i],"TP"], index=result_by_test_name.columns ), ignore_index=True)
+                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"TP"], index=result_by_test_name.columns ), ignore_index=True)
             elif (actual_status[i] == 1 and  preds[i]== 0):
-                result_by_test_name = result_by_test_name.append(pd.Series([ig,mintree,Features_type,test_names_as_list[i],"FN"], index=result_by_test_name.columns ), ignore_index=True)
+                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"FN"], index=result_by_test_name.columns ), ignore_index=True)
             elif (actual_status[i] == 0 and  preds[i]== 1):
-                result_by_test_name = result_by_test_name.append(pd.Series([ig,mintree,Features_type,test_names_as_list[i],"FP"], index=result_by_test_name.columns ), ignore_index=True)
+                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"FP"], index=result_by_test_name.columns ), ignore_index=True)
         
         tn, fp, fn, tp = confusion_matrix(y_test, preds, labels=[0,1]).ravel()
         TN = TN + tn
@@ -141,7 +150,7 @@ def predict_RF_crossValidation(data,k,foldType,balance,classifier,mintree,Featur
         TP = TP + tp
         
         # auc computation and others .. 
-        false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test, model.predict(x_test))
+        false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test, final_model.predict(x_test))
         auc_scores.append(auc(false_positive_rate, true_positive_rate))
     accuracy, F1, Precision, Recall = get_scores(TN,FP,FN,TP) 
     auc_scores = [0 if math.isnan(x) else x for x in auc_scores]
@@ -213,21 +222,22 @@ if __name__ == '__main__':
     output_dir = "result/classification_result/"
     Path(output_dir).mkdir(parents=True, exist_ok=True)    
 
-    result_by_test_name_columns = ["IG_min","numTrees","features_structure","test_name","Matrix_label"]    
+    result_by_test_name_columns = ["cross_validation","balance_type","IG_min","numTrees","classifier","features_structure","test_name","Matrix_label"]    
     df_columns = ["Model","cross_validation","balance_type","numTrees","features_structure","IG_min","num_satsifiedFeatures","classifier","TP","FN","FP","TN","precision","recall","F1_score","AUC"]    
         
     tokenOnly = vexctorizeToken(main_data['tokenList'])
     main_data = main_data.drop(columns=['tokenList'])
     vocabulary_processed_data = pd.concat([main_data, tokenOnly.reindex(main_data.index)], axis=1)
     
+    ##=========================================================##
     # arguments
-    k = 5
+    k = 10 # number of folds
     fold_type = ["StratifiedKFold"]
     balance = ["SMOTE"]
-    #classifier = ["RF","SVM", "DT", "MLP", "NB", "KNN"]
     classifier = ["RF"]
-    treeSize = [100]
-    minIGList = [0.02]
+    treeSize = [5000]
+    minIGList = [0.01]
+    ##=========================================================##
     
     for ig in minIGList:
         # create IG subfolder 
@@ -277,9 +287,7 @@ if __name__ == '__main__':
         result.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result.csv',  index=False)
         
         # Here we want to generate the confusion matrix by project... 
-        processed_data_with_project_name = processed_data[['project','test_name']]
-        merge_result_with_project_name = pd.merge(result_by_test_name,processed_data_with_project_name,on='test_name',how='left')
-        confusion_matrix_by_project = generateConfusionMatrixByProject(merge_result_with_project_name,processed_data)
+        confusion_matrix_by_project = generateConfusionMatrixByProject(result_by_test_name,processed_data)
         confusion_matrix_by_project.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_by_project.csv',  index=False)        
 
 print("The processed is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))

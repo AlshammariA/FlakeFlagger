@@ -110,6 +110,7 @@ execution_time = time.time()
 if __name__ == '__main__':
          
     vocabualry_and_processed_data = pd.read_csv(sys.argv[1])
+    output = sys.argv[2]
     FlakeFlagger_features = ['assertion-roulette', 'conditional-test-logic', 'eager-test', 'fire-and-forget', 'indirect-testing', 'mystery-guest', 'resource-optimism', 'test-run-war', 'testLength', 'numAsserts', 'numCoveredLines', 'ExecutionTime', 'projectSourceLinesCovered', 'projectSourceClassesCovered', 'hIndexModificationsPerCoveredLine_window5', 'hIndexModificationsPerCoveredLine_window10', 'hIndexModificationsPerCoveredLine_window25', 'hIndexModificationsPerCoveredLine_window50', 'hIndexModificationsPerCoveredLine_window75', 'hIndexModificationsPerCoveredLine_window100', 'hIndexModificationsPerCoveredLine_window500', 'hIndexModificationsPerCoveredLine_window10000', 'num_third_party_libs']
     unwantedColumns = ['test_name', 'flakyStatus', 'tokenList', 'java_keywords','javaKeysCounter']
 
@@ -122,6 +123,6 @@ if __name__ == '__main__':
     # IG for javakeywords and FlakeFlagger features...
     IG_result = calculateOtherFeaturesIG(vocabualry_and_processed_data,unwantedColumns,FlakeFlagger_features,IG_result)
     
-    IG_result.to_csv('result/Information_gain_per_feature.csv',  index=False)
+    IG_result.to_csv(output+'.csv',  index=False)
     
 print("The processed is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))
