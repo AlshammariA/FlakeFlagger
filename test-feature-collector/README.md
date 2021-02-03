@@ -5,6 +5,8 @@ It integrates with Maven to make it "easy" to integrate with off-the-shelf Maven
 It automatically installs [JaCoCo](https://www.eclemma.org/jacoco/) to a project's test running configuration to collect per-test statement coverage.
 Then, it provides a series of detectors and reporters that analyze that coverage data in conjunction with a complete AST of all of the code that is executed, automatically constructed by the [Eclipse JDT](https://www.eclipse.org/jdt/) library.
 
+This project is built to run with Java 8. Please compile and run the project using a JVM of version 8.
+
 
 Installing to use on real projects
 ----
