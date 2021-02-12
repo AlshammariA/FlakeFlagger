@@ -1,4 +1,6 @@
 # FlakeFlagger
+ [![pipeline status](https://gitlab.com/neu-se/flakeflagger/badges/main/pipeline.svg)](https://gitlab.com/neu-se/flakeflagger/-/commits/main)
+
  
 This repository is linked to our paper "FlakeFlagger: Predicting Flakiness Without Rerunning Tests". The preprint of the paper will be avaiable soon. 
 Authors: Abdulrahman Alshammari, Christopher Morris, Michael Hilton, Jonathan Bell
