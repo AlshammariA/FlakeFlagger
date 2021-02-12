@@ -11,6 +11,7 @@ leader, which shared a mountpoint using NFS with the rest of the cluster (coded 
 configured to execute the script `runOneBuild.php` upon boot. This script polls the Redis queue for a build job to perform, runs the build,
 saves the results, and reboots the machine when done. The `generateCMDsByArgs.php` script populates that build queue with projects to build.
 These scripts are in the `test-rerun-scripts` directory of this repository.
+The results of our rerun experiment are in `test-rerun-scripts/test_results.csv`.
 
 Running this experiment requires non-trivial resources and general cloud computing expertise.
 We expect that what might be *most* useful for other researchers is the rich dataset that we collected from this experiment - which includes
