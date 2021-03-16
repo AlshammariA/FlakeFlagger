@@ -110,6 +110,8 @@ def generate_processed_data_for_flakiness_prediction(result_dir,flakySource):
     specific_df_columns = LibrariesUsages_data[["test_name"]]
     LibrariesUsages_data = specific_df_columns.groupby(["test_name"]).size().reset_index(name="num_third_party_libs")    
     processed_data_with_libraries_usages = pd.merge(processed_data_with_churn, LibrariesUsages_data,on="test_name",how="left")
+    # if the test has no external third part libraries, then it should be 0 instead of nan
+    processed_data_with_libraries_usages["external_library"].fillna(0, inplace=True)
 
 
     # now we need to label each tests with its status ( flaky or not flaky )
