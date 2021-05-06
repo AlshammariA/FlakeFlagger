@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar  4 16:25:54 2021
+
+@authors: FlakeFlagger Authors .. 
+"""
+
 
 import pandas as pd
 import numpy as np
@@ -12,60 +20,95 @@ import time
 def concatenate_csv_files(files,csvFileName,ouptut):
 
     merge_csv = pd.concat((pd.read_csv(m) for m in files), axis=0, ignore_index=True)    
-    merge_csv.to_csv(ouptut+csvFileName,  index=False)
-
-
-#%%
-def check_broken_files(file):
-    return (len(open(file).readlines()) > 0)
+    merge_csv.to_csv(ouptut+csvFileName+'.csv',  index=False)
 
 #%%
-def collect_specific_dircs(main_dir,file_name):
-    print ("-- >  Start collecting the directories of "+file_name+" result from each project ... ")
-    directories = [x[0] for x in os.walk(main_dir) if x[0].endswith(file_name)]
-    return directories
-
+def fix_empty_csvFiles(files,new_columns):
+    fixed_csv_files = pd.DataFrame(columns = new_columns)
+    for file in files:
+        if (len(open(file).readlines()) == 0):
+            fixed_csv_files.to_csv(file,  index=False)
+   
 #%%
-def collect_FlakeFlagger_files(clone_project,ouptut):
+def collect_flakeFlagger_files(clone_project,ouptut):
+# to collect all csv files in result folder
+    smellsPretty = []
+    basicDemographics = []
+    churn = []
+    ExecutionTime = []
+    LibrariesUsages = []
     
-    # get all target directories .. 
-    target_dirs = collect_specific_dircs(clone_project,"target")
+    #flags 
+    smell_columns = True
+    basicDemographics_columns = True
+    churn_columns = True
+    ExecutionTime_columns = True
+    LibrariesUsages_columns = True
     
-    # ignored_files: this is when a file is broken and cannot be merge with the file result
-    correct_files = []
-    features_csv_files_lst = ["smells-pretty.csv","basicDemographics.csv","churn.csv","ExecutionTime.csv","LibrariesUsages.csv"]
-    for target in target_dirs:
-        for csv_file_type in features_csv_files_lst:
-            if (csv_file_type == "smells-pretty.csv"):
-                smell_file = target + "/"+csv_file_type
-                if (os.path.exists(smell_file)):
-                    if (check_broken_files(smell_file)):
-                        correct_files.append(smell_file)
-            else:
-                target_file = target + "/demographic-reports/"+csv_file_type
-                if (os.path.exists(target_file)):
-                    if (check_broken_files(target_file)):
-                        correct_files.append(target_file)
-            
+    print ("-- >  Start Collecting all csv files from each project to form processed_data.csv ")
+    for root, dirs, files in os.walk(clone_project):
+        for file in files:
+            if file.endswith("smells-pretty.csv"):
+                file_dir = os.path.join(root, file)
+                smellsPretty.append(file_dir)
+                if(smell_columns):
+                    if (len(open(file_dir).readlines()) > 0):
+                        smell_columns_lst = (pd.read_csv(file_dir)).columns
+                        smell_columns = False
 
-    # concatnate each specific types together    
-    print ("-- >  Start merging all csv files ... ")
-    for file_type in features_csv_files_lst:
-        specific_lst = []
-        for file in correct_files:
-            if (file.endswith(file_type)):
-                specific_lst.append(file)
-        
-        # concatenate the list
-        concatenate_csv_files(specific_lst,"All-"+file_type,ouptut)
+            elif file.endswith("basicDemographics.csv"):
+                file_dir = os.path.join(root, file)
+                basicDemographics.append(file_dir)
+                if(basicDemographics_columns):
+                    if (len(open(file_dir).readlines()) > 0):
+                        basicDemographics_columns_lst = (pd.read_csv(file_dir)).columns
+                        basicDemographics_columns = False
+
+
+            elif file.endswith("churn.csv"):
+                file_dir = os.path.join(root, file)
+                churn.append(file_dir)
+                if(churn_columns):
+                    if (len(open(file_dir).readlines()) > 0):
+                        churn_columns_lst = (pd.read_csv(file_dir)).columns
+                        churn_columns = False
+
+            elif file.endswith("ExecutionTime.csv"):
+                file_dir = os.path.join(root, file)
+                ExecutionTime.append(file_dir)
+                if(ExecutionTime_columns):
+                    if (len(open(file_dir).readlines()) > 0):
+                        ExecutionTime_columns_lst = (pd.read_csv(file_dir)).columns
+                        ExecutionTime_columns = False
+
+            elif file.endswith("LibrariesUsages.csv"):
+                file_dir = os.path.join(root, file)
+                LibrariesUsages.append(file_dir)
+                if(LibrariesUsages_columns):
+                    if (len(open(file_dir).readlines()) > 0):
+                        LibrariesUsages_columns_lst = (pd.read_csv(file_dir)).columns
+                        LibrariesUsages_columns = False
     
+    # fix if there is an empty csv file  
+    fix_empty_csvFiles(smellsPretty,smell_columns_lst)
+    fix_empty_csvFiles(basicDemographics,basicDemographics_columns_lst)
+    fix_empty_csvFiles(churn,churn_columns_lst)
+    fix_empty_csvFiles(ExecutionTime,ExecutionTime_columns_lst)
+    fix_empty_csvFiles(LibrariesUsages,LibrariesUsages_columns_lst)
+    
+    concatenate_csv_files(smellsPretty,"All-smells",ouptut)
+    concatenate_csv_files(basicDemographics,"All-basicDemographics",ouptut)
+    concatenate_csv_files(churn,"All-churn",ouptut)
+    concatenate_csv_files(ExecutionTime,"All-ExecutionTime",ouptut)
+    concatenate_csv_files(LibrariesUsages,"All-LibrariesUsages",ouptut)
+
 #%%
-def generate_processed_data_for_flakiness_prediction(result_dir,flakySource):
+def generate_processed_data_for_flakiness_prediction(result_dir,flaky_test_list):
 
     print ("-- >  Start generating processed_data.csv ")
 
     # start with copying the All-smells.csv
-    processed_data = pd.read_csv(result_dir+"All-smells-pretty.csv")
+    processed_data = pd.read_csv(result_dir+"All-smells.csv")
     processed_data["test_name"] = processed_data["testClassName"]+"."+processed_data["testMethodName"]
     for col in processed_data.columns:
         if col.startswith('Unnamed: '):
@@ -101,30 +144,30 @@ def generate_processed_data_for_flakiness_prediction(result_dir,flakySource):
     # now we add the num_third_party_libs ..
     library_domains = ["org.w3c", "java.", "javax.","com.sun","org.junit","junit.","org.easymock"]
     LibrariesUsages_data = pd.read_csv(result_dir+"All-LibrariesUsages.csv")
+
     LibrariesUsages_data["test_name"] = LibrariesUsages_data["testClassName"]+"."+LibrariesUsages_data["testMethodName"]
-    pattern = '|'.join(library_domains)
+    LibrariesUsages_data = LibrariesUsages_data.drop_duplicates(keep = "first")
+    LibrariesUsages_data["num_third_party_libs"] = 1
+    for index, row in LibrariesUsages_data.iterrows():
+        if str(row['libraryName']).startswith(tuple(library_domains)):
+            LibrariesUsages_data.loc[index,'num_third_party_libs']=0
     
-    LibrariesUsages_data['external_library'] = ~(LibrariesUsages_data.libraryName.str.contains(pattern))
-    LibrariesUsages_data['external_library'] = LibrariesUsages_data['external_library'].astype(int)
-    LibrariesUsages_data = LibrariesUsages_data[LibrariesUsages_data["external_library"] == 1]
-    specific_df_columns = LibrariesUsages_data[["test_name"]]
-    LibrariesUsages_data = specific_df_columns.groupby(["test_name"]).size().reset_index(name="num_third_party_libs")    
-    processed_data_with_libraries_usages = pd.merge(processed_data_with_churn, LibrariesUsages_data,on="test_name",how="left")
-    # if the test has no external third part libraries, then it should be 0 instead of nan
-    processed_data_with_libraries_usages["external_library"].fillna(0, inplace=True)
+    LibrariesUsages_data = LibrariesUsages_data[["test_name","num_third_party_libs"]]
+    specific_df_columns = LibrariesUsages_data.groupby(["test_name"]).num_third_party_libs.sum().reset_index()
+    processed_data_with_libraries_usages = pd.merge(processed_data_with_churn, specific_df_columns,on="test_name",how="left")
 
-
-    # now we need to label each tests with its status ( flaky or not flaky )
-    processed_data_with_libraries_usages['flaky'] = np.where(processed_data_with_libraries_usages['test_name'].isin(flakySource.test_name.unique()), 1, 0)
     
     # now we need to reorder the test_name and flaky columns .. 
     test_name_col = processed_data_with_libraries_usages['test_name']
     processed_data_with_libraries_usages.drop(labels=['test_name'], axis=1,inplace = True)
-    processed_data_with_libraries_usages.insert(3, 'test_name', test_name_col)    
-    flaky_col = processed_data_with_libraries_usages['flaky']
-    processed_data_with_libraries_usages.drop(labels=['flaky'], axis=1,inplace = True)
-    processed_data_with_libraries_usages.insert(4, 'flaky', flaky_col)
-
+    processed_data_with_libraries_usages.insert(3, 'test_name', test_name_col)
+    
+    # add the flakiness status to for each test_name
+    processed_data_with_libraries_usages.insert(4, 'flaky', test_name_col)
+    processed_data_with_libraries_usages['flaky'] = np.where(processed_data_with_libraries_usages['test_name'].isin(flaky_test_list), 1, 0) 
+    
+    # in case of duplication
+    processed_data_with_libraries_usages = processed_data_with_libraries_usages.drop_duplicates(keep='first')
     processed_data_with_libraries_usages.to_csv(result_dir+"processed_data.csv",  index=False)
     
 #%%
@@ -136,16 +179,14 @@ if __name__ == '__main__':
     clone_project = sys.argv[1]
 
     # output ... in case the folder does not exist
-    ouptut = sys.argv[2]
+    ouptut = "result/"
     Path(ouptut).mkdir(parents=True, exist_ok=True)
     
     # collect all files in one folder ... 
-    collect_FlakeFlagger_files(clone_project,ouptut)
-    
+    collect_flakeFlagger_files(clone_project,ouptut)
     
     # start generating the processed_data file. 
-    flakySource = pd.read_csv(sys.argv[3])
-    generate_processed_data_for_flakiness_prediction(ouptut,flakySource)
+    flaky_test_list = pd.read_csv(sys.argv[2])[sys.argv[3]].unique()
+    generate_processed_data_for_flakiness_prediction(ouptut,flaky_test_list)
     
     print("The process of generating processed_data.csv is completed in : (%s) seconds. " % round((time.time() - execution_time), 3))
-    
