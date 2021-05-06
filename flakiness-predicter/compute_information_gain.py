@@ -101,6 +101,23 @@ def calculateOtherFeaturesIG(data,unwantedColumns,processedData,IG_result):
     print (":: Done from calculating the IG for Flakeflagger and Java keywords features  ")
     return IG_result
     
+#%%
+def calculateOnlyFlakeFlaggerIG(data,unwantedColumns,IG_result):
+    new_data = data.copy()
+    counter = 0
+    print ("--- > Start calculating the information gain for FlakeFlagger features  ")
+    for col in new_data:
+        if col not in unwantedColumns:
+            IG = InfoGain(new_data,col,'flakyStatus')
+            counter = counter + 1
+            total_counter = round((counter/len(new_data.columns))*100)
+            sys.stdout.write('\r')
+            sys.stdout.write(f" --> {int(total_counter)}{'% of the features have been processed ... '}")
+            sys.stdout.write('\r')
+
+            IG_result = IG_result.append(pd.Series([col,"FlakeFlagger",IG], index=IG_result.columns ), ignore_index=True)
+    print (":: Done from calculating the IG for the Flakeflagger features  ")
+    return IG_result
    
     
 
@@ -125,4 +142,4 @@ if __name__ == '__main__':
     
     IG_result.to_csv(output+'.csv',  index=False)
     
-print("The processed is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))
+    print("The processed is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))
