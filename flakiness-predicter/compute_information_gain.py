@@ -22,9 +22,7 @@ def get_specific_project_data (data, k):
     list_of_projects = []
     for i in data.project.unique():
         temp = data.loc[data['project'] == i]
-        non_flaky = temp['flaky'].value_counts()[0]
-        flaky_total = len(temp) - non_flaky
-        if (flaky_total >= k):
+        if ((temp['flaky'].values == 1).sum() >= k):
             list_of_projects.append(i)    
     return list_of_projects
 
