@@ -168,7 +168,7 @@ def generate_processed_data_for_flakiness_prediction(result_dir,flaky_test_list)
     
     # in case of duplication
     processed_data_with_libraries_usages = processed_data_with_libraries_usages.drop_duplicates(keep='first')
-    processed_data_with_libraries_usages.to_csv(result_dir+"processed_data.csv",  index=False)
+    processed_data_with_libraries_usages.to_csv(result_dir+"your_processed_data.csv",  index=False)
     
 #%%
 execution_time = time.time()
