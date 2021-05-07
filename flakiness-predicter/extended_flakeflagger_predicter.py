@@ -310,7 +310,7 @@ if __name__ == '__main__':
 
     ##=========================================================##
     # arguments
-    k = 10 # number of folds
+    kfold = [10] # number of folds
     fold_type = ["StratifiedKFold"]
     balance = ["SMOTE"]
     classifier = ["RF"]
@@ -351,19 +351,19 @@ if __name__ == '__main__':
                 for fold in fold_type:
                     for bal in balance:
                         for cl in classifier:
-    
-                            # print the given variables for easy debug. 
-                            print ("==> run selection is: (information_gain>="+str(ig)+")+(Classifier="+cl+")+(Balance="+bal+")+(Fold type="+fold+")+(Minimum tress [RF only]="+str(mintree))
-                            if (cross_validation):
-                                TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_crossValidation(processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                                result = result.append(pd.Series(["CrossAllProjects",fold,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
-                                print ("--> The prediction based on the FlakeFlagger features is completed ")
-                                print("=======================================================================")
-                            else:
-                                TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_external_dataset(processed_data,test_processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                                result = result.append(pd.Series(["CrossAllProjects","external_test_data",bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
-                                print ("--> The prediction based on the FlakeFlagger features is completed ")
-                                print("=======================================================================")
+                            for k in kfold:
+                                # print the given variables for easy debug. 
+                                print ("==> run selection is: (information_gain>="+str(ig)+")+(Classifier="+cl+")+(Balance="+bal+")+(Fold type="+fold+")+(Minimum tress [RF only]="+str(mintree)+")+(fold_size="+str(k)+")")
+                                if (cross_validation):
+                                    TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_crossValidation(processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
+                                    result = result.append(pd.Series(["CrossAllProjects",fold,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
+                                    print ("--> The prediction based on the FlakeFlagger features is completed ")
+                                    print("=======================================================================")
+                                else:
+                                    TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_external_dataset(processed_data,test_processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
+                                    result = result.append(pd.Series(["CrossAllProjects","external_test_data",bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
+                                    print ("--> The prediction based on the FlakeFlagger features is completed ")
+                                    print("=======================================================================")
     
             result_by_test_name.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_per_test.csv',  index=False)        
             result.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result.csv',  index=False)
