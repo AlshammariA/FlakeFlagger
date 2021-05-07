@@ -2,7 +2,7 @@
  [![pipeline status](https://gitlab.com/neu-se/flakeflagger/badges/main/pipeline.svg)](https://gitlab.com/neu-se/flakeflagger/-/commits/main)
 
  
-This repository is linked to our paper "FlakeFlagger: Predicting Flakiness Without Rerunning Tests". The preprint of the paper is avaiable in this link [link](https://www.jonbell.net/preprint/icse21-flakeflagger.pdf). 
+This repository is linked to our paper "FlakeFlagger: Predicting Flakiness Without Rerunning Tests". The preprint of the paper is avaiable in this [link](https://www.jonbell.net/preprint/icse21-flakeflagger.pdf). 
 Authors: Abdulrahman Alshammari, Christopher Morris, Michael Hilton, Jonathan Bell
 ## Step 0: Identifying Flaky Tests through Reruns
 The first part of experimental process is to generate a dataset of flaky tests by rerunning the test suite of each project in our
