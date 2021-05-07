@@ -18,7 +18,7 @@ This is a list of input files that are required to accomplish this step:
 * `input_data/original_tests/` :
 	This directory contains the body contents of all flaky and non flaky tests. This is used to collect the token/java keywords per test. 
 
-## How to replicate our experiment?
+## Choice 1: How to replicate our experiment?
 There are three main steps to perform the prediction phase. 
 * Hint: the first two steps can be skipped as the generated files from these steps are already in the `result` directory. 
 
@@ -70,4 +70,25 @@ where the output will be under `result/classification_result/` directory which c
 	
 
 
+## Choice 2: How to apply FlakeFlagger predictor on your data?
+If you have a dataset of flaky and non-flaky tests and you were able to run FlakeFlagger feature collector, all you need is to generate `processed_data.csv` and apply FlakeFlagger predictor. To do so, please follow the following steps.
 
+1. run `generate_processed_data.py` on the directory of projects contains projects. These projects should have all csv files generated from the feature collection phase. Please refer to `test-feature-collector` on how to collect features from a set of java projects. `generate_processed_data.py` script takes three arguments which are:
+	- `projects_dir`: it is the head directory which contains all projects where we collect features from.
+	- `source_of_flaky_tests`: this is a csv file that should contain a list of flaky test names
+	- `column_name`: it is the name of the column where flaky tests belong.
+For example, if the directory of the java projects is `~/Desktop/projects/`, the csv file of flaky tests is `~/Desktop/flaky_test_list.csv`, and the name of the column in this csv file is `test_name`, then the command to generate `processed_data.csv`
+
+```console
+python generate_processed_data.py ~/Desktop/projects/ ~/Desktop/flaky_test_list.csv test_name
+``` 
+
+2. run the FlakeFlagger predictor script `extended_flakeflagger_predicter.py` as the following:
+
+```console
+python extended_flakeflagger_predicter.py result/your_processed_data.csv result/your_processed_data.csv
+```  
+
+The `result` should contain the prediction result. Please refer to the last hint in `Choise 1: How to replicate our experiment?` section to manipulate different classification arguments. 
+
+** Note: using `result/your_processed_data.csv` means we do not use an external dataset for testing (the same we did in our paper by using the cross-validation). In fact, this script is capable of having an external dataset for testing. However, we encourage you to refer to the paper as we discuss that the flaky tests from `processed_data.csv` are not representing all flaky tests in java projects. This means the FlakeFlagger model may not perform well on external dataset. 
