@@ -316,6 +316,7 @@ if __name__ == '__main__':
     classifier = ["RF"]
     treeSize = [1000]
     minIGList = [0.02]
+    IG_flag = True # this flag should be false if there is no feature reach the min IG
     ##=========================================================##
     # this is for output dataframes .. 
     result_by_test_name_columns = ["cross_validation","balance_type","IG_min","numTrees","classifier","features_structure","test_name","Matrix_label"]    
@@ -335,6 +336,8 @@ if __name__ == '__main__':
         
         if(ig != 0):
             keep_columns = keep_minIG + ['project','flakyStatus','test_name']
+            if (len(keep_minIG) == 0):
+                IG_flag = False
             processed_data = processed_data[keep_columns]
             if (not cross_validation):
                 test_processed_data = test_processed_data[keep_columns]
@@ -343,34 +346,36 @@ if __name__ == '__main__':
         result = pd.DataFrame(columns = df_columns)
         result_by_test_name = pd.DataFrame(columns = result_by_test_name_columns)
 
-        for mintree in treeSize:
-            for fold in fold_type:
-                for bal in balance:
-                    for cl in classifier:
-
-                        # print the given variables for easy debug. 
-                        print ("==> run selection is: (information_gain>="+str(ig)+")+(Classifier="+cl+")+(Balance="+bal+")+(Fold type="+fold+")+(Minimum tress [RF only]="+str(mintree))
-                        if (cross_validation):
-                            TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_crossValidation(processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                            result = result.append(pd.Series(["CrossAllProjects",fold,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
-                            print ("--> The prediction based on the FlakeFlagger features is completed ")
-                            print("=======================================================================")
-                        else:
-                            TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_external_dataset(processed_data,test_processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                            result = result.append(pd.Series(["CrossAllProjects","external_test_data",bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
-                            print ("--> The prediction based on the FlakeFlagger features is completed ")
-                            print("=======================================================================")
-
-        result_by_test_name.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_per_test.csv',  index=False)        
-        result.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result.csv',  index=False)
-        
-        # Here we want to generate the confusion matrix by project...
-        if (cross_validation):
-            confusion_matrix_by_project = generateConfusionMatrixByProject(result_by_test_name,processed_data)
-        else:
-            confusion_matrix_by_project = generateConfusionMatrixByProject(result_by_test_name,test_processed_data)
+        if (IG_flag):
+            for mintree in treeSize:
+                for fold in fold_type:
+                    for bal in balance:
+                        for cl in classifier:
+    
+                            # print the given variables for easy debug. 
+                            print ("==> run selection is: (information_gain>="+str(ig)+")+(Classifier="+cl+")+(Balance="+bal+")+(Fold type="+fold+")+(Minimum tress [RF only]="+str(mintree))
+                            if (cross_validation):
+                                TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_crossValidation(processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
+                                result = result.append(pd.Series(["CrossAllProjects",fold,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
+                                print ("--> The prediction based on the FlakeFlagger features is completed ")
+                                print("=======================================================================")
+                            else:
+                                TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_external_dataset(processed_data,test_processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
+                                result = result.append(pd.Series(["CrossAllProjects","external_test_data",bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
+                                print ("--> The prediction based on the FlakeFlagger features is completed ")
+                                print("=======================================================================")
+    
+            result_by_test_name.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_per_test.csv',  index=False)        
+            result.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result.csv',  index=False)
             
-        confusion_matrix_by_project.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_by_project.csv',  index=False)        
- 
+            # Here we want to generate the confusion matrix by project...
+            if (cross_validation):
+                confusion_matrix_by_project = generateConfusionMatrixByProject(result_by_test_name,processed_data)
+            else:
+                confusion_matrix_by_project = generateConfusionMatrixByProject(result_by_test_name,test_processed_data)
+                
+            confusion_matrix_by_project.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_by_project.csv',  index=False)        
+        else:
+            print ("--> Warning: No FlakeFlagger feature' IG larger than the given min IG ")
       
     print("The process is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))
