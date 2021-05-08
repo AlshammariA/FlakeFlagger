@@ -65,9 +65,9 @@ def get_scores (tn,fp,fn,tp):
     
 def generateConfusionMatrixByProject(data,processed_data):
     
-    filter_data = data[['cross_validation', 'balance_type', 'IG_min', 'numTrees', 'classifier','features_structure']]
+    filter_data = data[['cross_validation', 'balance_type',"fold_size", 'IG_min', 'numTrees', 'classifier','features_structure']]
     filter_data = filter_data.drop_duplicates()
-    df_columns = ['cross_validation', 'balance_type', 'IG_min', 'numTrees', 'classifier',"features_structure","project","TP","FN","FP","TN","Precision","Recall","F1"]    
+    df_columns = ['cross_validation', 'balance_type',"fold_size", 'IG_min', 'numTrees', 'classifier',"features_structure","project","TP","FN","FP","TN","Precision","Recall","F1"]    
     result = pd.DataFrame(columns = df_columns)
     
     # add project name to the full result .. 
@@ -81,17 +81,18 @@ def generateConfusionMatrixByProject(data,processed_data):
                                       (updated_data['IG_min'] == row['IG_min']) &
                                       (updated_data['numTrees'] == row['numTrees']) &
                                       (updated_data['classifier'] == row['classifier']) &
+                                      (updated_data['fold_size'] == row['fold_size']) &
                                       (updated_data['features_structure'] == row['features_structure']) ]
 
         for proj in data_per_result.project.unique():
                 sepcific_project = data_per_result[data_per_result["project"] == proj]
-                TP = FN = FP = 0
+                TP = FN = FP = 0 
                 TP = len(sepcific_project[sepcific_project["Matrix_label"] == "TP"])
                 FN = len(sepcific_project[sepcific_project["Matrix_label"] == "FN"])
                 FP = len(sepcific_project[sepcific_project["Matrix_label"] == "FP"])
                 TN = len(processed_data[processed_data["project"] == proj]) - (TP+FN+FP)
                 accuracy, F1, Precision, Recall = get_scores(TN,FP,FN,TP)
-                result = result.append(pd.Series([row['cross_validation'],row['balance_type'],row['IG_min'],row['numTrees'],row['classifier'],row['features_structure'],proj,TP, FN, FP, TN,str(round(((Precision)*100)))+"%", str(round(((Recall)*100)))+"%",str(round(((F1)*100)))+"%"], index=result.columns ), ignore_index=True)
+                result = result.append(pd.Series([row['cross_validation'],row['balance_type'],row['fold_size'],row['IG_min'],row['numTrees'],row['classifier'],row['features_structure'],proj,TP, FN, FP, TN,str(round(((Precision)*100)))+"%", str(round(((Recall)*100)))+"%",str(round(((F1)*100)))+"%"], index=result.columns ), ignore_index=True)
 
     return result
 
@@ -106,7 +107,6 @@ def predict_crossValidation(data,k,foldType,balance,classifier,mintree,Features_
         del data["project"]
     data_target = data[['flakyStatus']]
     data = data.drop(['flakyStatus'], axis=1)
-    
     
     # KFold Cross Validation approaches
     if (foldType == "KFold"):
@@ -152,11 +152,11 @@ def predict_crossValidation(data,k,foldType,balance,classifier,mintree,Features_
         actual_status = y_test['flakyStatus'].tolist()
         for i in range (0,len(test_names_as_list)):
             if (actual_status[i] == 1 and  preds[i]== 1):
-                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"TP"], index=result_by_test_name.columns ), ignore_index=True)
+                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,k,ig,mintree,classifier,Features_type,test_names_as_list[i],"TP"], index=result_by_test_name.columns ), ignore_index=True)
             elif (actual_status[i] == 1 and  preds[i]== 0):
-                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"FN"], index=result_by_test_name.columns ), ignore_index=True)
+                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,k,ig,mintree,classifier,Features_type,test_names_as_list[i],"FN"], index=result_by_test_name.columns ), ignore_index=True)
             elif (actual_status[i] == 0 and  preds[i]== 1):
-                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"FP"], index=result_by_test_name.columns ), ignore_index=True)
+                result_by_test_name = result_by_test_name.append(pd.Series([foldType,balance,k,ig,mintree,classifier,Features_type,test_names_as_list[i],"FP"], index=result_by_test_name.columns ), ignore_index=True)
         
         tn, fp, fn, tp = confusion_matrix(y_test, preds, labels=[0,1]).ravel()
         TN = TN + tn
@@ -193,13 +193,6 @@ def predict_external_dataset(data,test_data,k,foldType,balance,classifier,mintre
     x_test = test_data.drop(['flakyStatus'], axis=1)
     
     
-    # # KFold Cross Validation approaches
-    # if (foldType == "KFold"):
-    #     fold = KFold(n_splits=k,shuffle=True)
-    # else:
-    #     fold = StratifiedKFold(n_splits=k,shuffle=True)
-
-    
     auc_scores = []
     TN = FP = FN = TP = 0
         
@@ -235,11 +228,11 @@ def predict_external_dataset(data,test_data,k,foldType,balance,classifier,mintre
     actual_status = y_test['flakyStatus'].tolist()
     for i in range (0,len(test_names_as_list)):
         if (actual_status[i] == 1 and  preds[i]== 1):
-            result_by_test_name = result_by_test_name.append(pd.Series(["external_test_data",balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"TP"], index=result_by_test_name.columns ), ignore_index=True)
+            result_by_test_name = result_by_test_name.append(pd.Series(["external_test_data",balance,k,ig,mintree,classifier,Features_type,test_names_as_list[i],"TP"], index=result_by_test_name.columns ), ignore_index=True)
         elif (actual_status[i] == 1 and  preds[i]== 0):
-            result_by_test_name = result_by_test_name.append(pd.Series(["external_test_data",balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"FN"], index=result_by_test_name.columns ), ignore_index=True)
+            result_by_test_name = result_by_test_name.append(pd.Series(["external_test_data",balance,k,ig,mintree,classifier,Features_type,test_names_as_list[i],"FN"], index=result_by_test_name.columns ), ignore_index=True)
         elif (actual_status[i] == 0 and  preds[i]== 1):
-            result_by_test_name = result_by_test_name.append(pd.Series(["external_test_data",balance,ig,mintree,classifier,Features_type,test_names_as_list[i],"FP"], index=result_by_test_name.columns ), ignore_index=True)
+            result_by_test_name = result_by_test_name.append(pd.Series(["external_test_data",balance,k,ig,mintree,classifier,Features_type,test_names_as_list[i],"FP"], index=result_by_test_name.columns ), ignore_index=True)
     
     tn, fp, fn, tp = confusion_matrix(y_test, preds, labels=[0,1]).ravel()
     TN = TN + tn
@@ -295,7 +288,7 @@ if __name__ == '__main__':
 
 
     #collect IG per feature
-    IG_flag = True
+    IG_flag = False
     if (IG_flag):
         IG_result = pd.DataFrame(columns = ['features','type','IG'])    
         unwantedColumns = ['test_name', 'flakyStatus', 'project']
@@ -310,17 +303,18 @@ if __name__ == '__main__':
 
     ##=========================================================##
     # arguments
-    kfold = [10] # number of folds
+    kfold = [5,10] # number of folds
     fold_type = ["StratifiedKFold"]
-    balance = ["SMOTE"]
-    classifier = ["RF"]
-    treeSize = [1000]
-    minIGList = [0.02]
+    balance = ["SMOTE"] # ['SMOTE', 'undersampling', 'none']
+    classifier = ['RF'] # ['RF', 'SVM', 'DT', 'MLP', 'NB', 'KNN']
+    treeSize = [10] # it could be between 100 to 5000 
+    minIGList = [0] # it could be any value between 0 and 1
+    
     IG_flag = True # this flag should be false if there is no feature reach the min IG
     ##=========================================================##
     # this is for output dataframes .. 
-    result_by_test_name_columns = ["cross_validation","balance_type","IG_min","numTrees","classifier","features_structure","test_name","Matrix_label"]    
-    df_columns = ["Model","cross_validation","balance_type","numTrees","features_structure","IG_min","num_satsifiedFeatures","classifier","TP","FN","FP","TN","precision","recall","F1_score","AUC"]    
+    result_by_test_name_columns = ["cross_validation","balance_type","fold_size","IG_min","numTrees","classifier","features_structure","test_name","Matrix_label"]    
+    df_columns = ["Model","cross_validation","fold_size","balance_type","numTrees","features_structure","IG_min","num_satsifiedFeatures","classifier","TP","FN","FP","TN","precision","recall","F1_score","AUC"]    
 
     for ig in minIGList:
         # create IG subfolder 
@@ -345,23 +339,24 @@ if __name__ == '__main__':
 
         result = pd.DataFrame(columns = df_columns)
         result_by_test_name = pd.DataFrame(columns = result_by_test_name_columns)
-
+        
         if (IG_flag):
             for mintree in treeSize:
                 for fold in fold_type:
                     for bal in balance:
                         for cl in classifier:
                             for k in kfold:
+    
                                 # print the given variables for easy debug. 
                                 print ("==> run selection is: (information_gain>="+str(ig)+")+(Classifier="+cl+")+(Balance="+bal+")+(Fold type="+fold+")+(Minimum tress [RF only]="+str(mintree)+")+(fold_size="+str(k)+")")
                                 if (cross_validation):
                                     TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_crossValidation(processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                                    result = result.append(pd.Series(["CrossAllProjects",fold,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
+                                    result = result.append(pd.Series(["CrossAllProjects",fold,k,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
                                     print ("--> The prediction based on the FlakeFlagger features is completed ")
                                     print("=======================================================================")
                                 else:
                                     TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_external_dataset(processed_data,test_processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                                    result = result.append(pd.Series(["CrossAllProjects","external_test_data",bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
+                                    result = result.append(pd.Series(["CrossAllProjects","external_test_data",k,bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
                                     print ("--> The prediction based on the FlakeFlagger features is completed ")
                                     print("=======================================================================")
     
@@ -376,6 +371,6 @@ if __name__ == '__main__':
                 
             confusion_matrix_by_project.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_by_project.csv',  index=False)        
         else:
-            print ("--> Warning: No FlakeFlagger feature' IG larger than the given min IG ")
+             print ("--> Warning: No FlakeFlagger feature' IG larger than the given min IG ")
       
     print("The process is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))
