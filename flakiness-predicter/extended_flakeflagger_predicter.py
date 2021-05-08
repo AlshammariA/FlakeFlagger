@@ -307,7 +307,7 @@ if __name__ == '__main__':
     fold_type = ["StratifiedKFold"]
     balance = ["SMOTE"] # ['SMOTE', 'undersampling', 'none']
     classifier = ['RF'] # ['RF', 'SVM', 'DT', 'MLP', 'NB', 'KNN']
-    treeSize = [10] # it could be between 100 to 5000 
+    treeSize = [1000] # it could be between 100 to 5000 
     minIGList = [0] # it could be any value between 0 and 1
     
     IG_flag = True # this flag should be false if there is no feature reach the min IG
