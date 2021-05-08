@@ -288,7 +288,7 @@ if __name__ == '__main__':
 
 
     #collect IG per feature
-    IG_flag = False
+    IG_flag = True
     if (IG_flag):
         IG_result = pd.DataFrame(columns = ['features','type','IG'])    
         unwantedColumns = ['test_name', 'flakyStatus', 'project']
