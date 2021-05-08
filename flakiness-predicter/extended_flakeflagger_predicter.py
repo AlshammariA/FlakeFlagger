@@ -371,6 +371,6 @@ if __name__ == '__main__':
                 
             confusion_matrix_by_project.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_by_project.csv',  index=False)        
         else:
-             print ("--> Warning: No FlakeFlagger feature' IG larger than the given min IG ")
+            print ("--> Warning: No FlakeFlagger feature' IG larger than the given min IG ")
       
     print("The process is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))
