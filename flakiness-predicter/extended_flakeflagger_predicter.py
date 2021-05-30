@@ -12,7 +12,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import classification_report, f1_score, precision_score,recall_score, confusion_matrix
-import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold, StratifiedKFold
@@ -29,7 +28,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 import compute_information_gain as IG
-
+import pickle
 
 #%%
 def main_inspection(data,min_flaky):    
@@ -65,9 +64,9 @@ def get_scores (tn,fp,fn,tp):
     
 def generateConfusionMatrixByProject(data,processed_data):
     
-    filter_data = data[['cross_validation', 'balance_type',"fold_size", 'IG_min', 'numTrees', 'classifier','features_structure']]
+    filter_data = data[['cross_validation', 'balance_type',"fold_size", 'IG_min', 'numTrees(RF_only)', 'classifier','features_structure']]
     filter_data = filter_data.drop_duplicates()
-    df_columns = ['cross_validation', 'balance_type',"fold_size", 'IG_min', 'numTrees', 'classifier',"features_structure","project","TP","FN","FP","TN","Precision","Recall","F1"]    
+    df_columns = ['cross_validation', 'balance_type',"fold_size", 'IG_min', 'numTrees(RF_only)', 'classifier',"features_structure","project","TP","FN","FP","TN","Precision","Recall","F1"]    
     result = pd.DataFrame(columns = df_columns)
     
     # add project name to the full result .. 
@@ -79,7 +78,7 @@ def generateConfusionMatrixByProject(data,processed_data):
         data_per_result = updated_data[(updated_data['cross_validation'] == row['cross_validation']) &
                                       (updated_data['balance_type'] == row['balance_type']) &
                                       (updated_data['IG_min'] == row['IG_min']) &
-                                      (updated_data['numTrees'] == row['numTrees']) &
+                                      (updated_data['numTrees(RF_only)'] == row['numTrees(RF_only)']) &
                                       (updated_data['classifier'] == row['classifier']) &
                                       (updated_data['fold_size'] == row['fold_size']) &
                                       (updated_data['features_structure'] == row['features_structure']) ]
@@ -92,7 +91,7 @@ def generateConfusionMatrixByProject(data,processed_data):
                 FP = len(sepcific_project[sepcific_project["Matrix_label"] == "FP"])
                 TN = len(processed_data[processed_data["project"] == proj]) - (TP+FN+FP)
                 accuracy, F1, Precision, Recall = get_scores(TN,FP,FN,TP)
-                result = result.append(pd.Series([row['cross_validation'],row['balance_type'],row['fold_size'],row['IG_min'],row['numTrees'],row['classifier'],row['features_structure'],proj,TP, FN, FP, TN,str(round(((Precision)*100)))+"%", str(round(((Recall)*100)))+"%",str(round(((F1)*100)))+"%"], index=result.columns ), ignore_index=True)
+                result = result.append(pd.Series([row['cross_validation'],row['balance_type'],row['fold_size'],row['IG_min'],row['numTrees(RF_only)'],row['classifier'],row['features_structure'],proj,TP, FN, FP, TN,str(round(((Precision)*100)))+"%", str(round(((Recall)*100)))+"%",str(round(((F1)*100)))+"%"], index=result.columns ), ignore_index=True)
 
     return result
 
@@ -173,7 +172,7 @@ def predict_crossValidation(data,k,foldType,balance,classifier,mintree,Features_
     
 
 #%%
-def predict_external_dataset(data,test_data,k,foldType,balance,classifier,mintree,Features_type,ig,result_by_test_name):
+def predict_external_dataset(data,test_data,k,foldType,balance,classifier,mintree,Features_type,ig,result_by_test_name,train_model,train_models_dir):
 
     data = data.dropna()
     test_data = test_data.dropna()
@@ -207,22 +206,39 @@ def predict_external_dataset(data,test_data,k,foldType,balance,classifier,mintre
         undersampling = RandomUnderSampler()
         x_train, y_train = undersampling.fit_resample(x_train, y_train)
     
-    if (classifier == 'DT'):
-        model = DecisionTreeClassifier(criterion='entropy', max_depth = None)
-    elif (classifier == 'RF'):
-         model = RandomForestClassifier(criterion = "entropy",n_estimators=mintree)
-    elif (classifier == 'MLP'):
-        model = MLPClassifier(hidden_layer_sizes=(13,13,13),max_iter=50)        
-    elif (classifier == 'SVM'):
-        model = svm.SVC(gamma='scale')       
-    elif (classifier == 'Ada'):
-        model = AdaBoostClassifier(n_estimators=100, random_state=0) 
-    elif (classifier == 'NB'):
-        model = GaussianNB() 
-    elif (classifier == 'KNN'):
-        model = KNeighborsClassifier(n_neighbors=7)
+    # select between use existing pre-selecting 
+    no_exist_pre_train = not train_model
+    if (classifier == "RF"):
+        model_name = classifier+"-"+balance+"-IG_"+str(ig)+"-minTree_"+str(mintree)+"-"+foldType+"-"+"pre-trained-model.sav"
+    else:
+        model_name = classifier+"-"+balance+"-IG_"+str(ig)+"-"+foldType+"-"+"pre-trained-model.sav"
 
-    final_model = model.fit(x_train, y_train)
+    if (train_model):
+        if(os.path.exists(train_models_dir+model_name)):
+            print(" ==>  Note: the selected pre-trained model exists ...")
+            final_model = pickle.load(open(train_models_dir+model_name, 'rb'))
+        else:
+            print(" ==>  Note: the selected pre-trained model DOES NOT exist - We need to re-train the data again ... ")
+            no_exist_pre_train = True
+    if (no_exist_pre_train):
+        if (classifier == 'DT'):
+            model = DecisionTreeClassifier(criterion='entropy', max_depth = None)
+        elif (classifier == 'RF'):
+            model = RandomForestClassifier(criterion = "entropy",n_estimators=mintree)
+        elif (classifier == 'MLP'):
+            model = MLPClassifier(hidden_layer_sizes=(13,13,13),max_iter=50)        
+        elif (classifier == 'SVM'):
+            model = svm.SVC(gamma='scale')       
+        elif (classifier == 'Ada'):
+            model = AdaBoostClassifier(n_estimators=100, random_state=0) 
+        elif (classifier == 'NB'):
+            model = GaussianNB() 
+        elif (classifier == 'KNN'):
+            model = KNeighborsClassifier(n_neighbors=7)
+
+        final_model = model.fit(x_train, y_train)
+        pickle.dump(final_model, open(train_models_dir+model_name, 'wb'))
+
     preds = final_model.predict(x_test)
     
     actual_status = y_test['flakyStatus'].tolist()
@@ -275,46 +291,74 @@ if __name__ == '__main__':
 
     # for testing data .. ( if argv 1 == argv 2 -- cross validation .. otherwise, it is an external dataset .. )
     main_test_data = pd.read_csv(sys.argv[2])
-    cross_validation = True
+
+    cross_validation = (sys.argv[4]=="True")
     if (sys.argv[2] != sys.argv[1]):
         cross_validation = False
         main_test_data = prepare_external_data(main_test_data)
-        output_dir = sys.argv[3]+"/result/only_flakeflagger_classification_result/using_external_testing_dataset/"
+        output_dir = sys.argv[3]+"/only_flakeflagger_classification_result/using_external_testing_dataset/"
+
+        if(sys.argv[1] == "result/processed_data.csv"):
+             train_models_dir = "extended_FlakeFlagger_result/FlakeFlagger_pre_trained_models/"
+             output_dir = sys.argv[3]+"/only_flakeflagger_classification_result/our_data_on_external_testing_dataset/"
+        else:
+             train_models_dir = sys.argv[3]+"/FlakeFlagger_pre_trained_models_your_data/"
+             output_dir = sys.argv[3]+"/only_flakeflagger_classification_result/your_data_on_external_testing_dataset/"
+            
         Path(output_dir).mkdir(parents=True, exist_ok=True)    
-        
+        Path(train_models_dir).mkdir(parents=True, exist_ok=True)
     else:
-        output_dir = sys.argv[3]+"/result/only_flakeflagger_classification_result/using_cross_validation/"
+        output_dir = sys.argv[3]+"/only_flakeflagger_classification_result/using_cross_validation/"
         Path(output_dir).mkdir(parents=True, exist_ok=True)    
 
 
     #collect IG per feature
-    IG_flag = True
+    IG_flag = (sys.argv[5]=="True")
     if (IG_flag):
         IG_result = pd.DataFrame(columns = ['features','type','IG'])    
         unwantedColumns = ['test_name', 'flakyStatus', 'project']
-        print ("=========================================================")
         IG_lst = IG.calculateOnlyFlakeFlaggerIG(main_data,unwantedColumns,IG_result)
-        IG_lst.to_csv(output_dir+'FlakeFlagger_features_IGs.csv',  index=False)   
+        if(sys.argv[1] == "result/processed_data.csv"):
+            IG_lst.to_csv('extended_FlakeFlagger_result/FlakeFlagger_features_IGs.csv')
+        else:
+            IG_lst.to_csv(sys.argv[3]+'/FlakeFlagger_features_IGs_your_dataset.csv')
         print ("=========================================================")
         
     else:
-        # pass the IG csv file .. 
-        IG_lst = pd.read_csv(output_dir+'FlakeFlagger_features_IGs.csv')
-
+        # pass the IG csv file ..
+        if(sys.argv[1] == "result/processed_data.csv"):
+            IG_lst = pd.read_csv('extended_FlakeFlagger_result/FlakeFlagger_features_IGs.csv')
+        else:
+            IG_lst = pd.read_csv(sys.argv[3]+'/FlakeFlagger_features_IGs_your_dataset.csv')
+    
     ##=========================================================##
     # arguments
-    kfold = [5,10] # number of folds
-    fold_type = ["StratifiedKFold"]
-    balance = ["SMOTE"] # ['SMOTE', 'undersampling', 'none']
-    classifier = ['RF'] # ['RF', 'SVM', 'DT', 'MLP', 'NB', 'KNN']
-    treeSize = [1000] # it could be between 100 to 5000 
-    minIGList = [0,0.01,0.02] # it could be any value between 0 and 1
+
+    min_IG_flag = (sys.argv[6]=="True") # this flag will be turn to false if there is no feature reaches the min IG
+    train_model = (sys.argv[7]=="True") # True if we want to use the pre-trained model of FlakeFlagger for prediction on external dataset .. 
     
-    IG_flag = True # this flag should be false if there is no feature reach the min IG
+    
+    fold_type = sys.argv[8].split(" ")    
+    balance = sys.argv[9].split(" ")    
+    classifier = sys.argv[10].split(" ")
+    
+    treeSize = []
+    for t in sys.argv[11].split(" "):
+        treeSize.append(int(t))
+    
+    minIGList = []
+    for argIG in sys.argv[12].split(" "):
+        minIGList.append(float(argIG))
+        
+    kfold = []
+    for argfold in sys.argv[13].split(" "):
+        kfold.append(int(argfold))
+        
+    
     ##=========================================================##
     # this is for output dataframes .. 
-    result_by_test_name_columns = ["cross_validation","balance_type","fold_size","IG_min","numTrees","classifier","features_structure","test_name","Matrix_label"]    
-    df_columns = ["Model","cross_validation","fold_size","balance_type","numTrees","features_structure","IG_min","num_satsifiedFeatures","classifier","TP","FN","FP","TN","precision","recall","F1_score","AUC"]    
+    result_by_test_name_columns = ["cross_validation","balance_type","fold_size","IG_min","numTrees(RF_only)","classifier","features_structure","test_name","Matrix_label"]    
+    df_columns = ["Model","cross_validation","fold_size","balance_type","numTrees(RF_only)","features_structure","IG_min","num_satsifiedFeatures","classifier","TP","FN","FP","TN","precision","recall","F1_score","AUC"]    
 
     for ig in minIGList:
         # create IG subfolder 
@@ -331,7 +375,7 @@ if __name__ == '__main__':
         if(ig != 0):
             keep_columns = keep_minIG + ['project','flakyStatus','test_name']
             if (len(keep_minIG) == 0):
-                IG_flag = False
+                min_IG_flag = False
             processed_data = processed_data[keep_columns]
             if (not cross_validation):
                 test_processed_data = test_processed_data[keep_columns]
@@ -340,7 +384,7 @@ if __name__ == '__main__':
         result = pd.DataFrame(columns = df_columns)
         result_by_test_name = pd.DataFrame(columns = result_by_test_name_columns)
         
-        if (IG_flag):
+        if (min_IG_flag):
             for mintree in treeSize:
                 for fold in fold_type:
                     for bal in balance:
@@ -348,16 +392,23 @@ if __name__ == '__main__':
                             for k in kfold:
     
                                 # print the given variables for easy debug. 
-                                print ("==> run selection is: (information_gain>="+str(ig)+")+(Classifier="+cl+")+(Balance="+bal+")+(Fold type="+fold+")+(Minimum tress [RF only]="+str(mintree)+")+(fold_size="+str(k)+")")
                                 if (cross_validation):
+                                    if (cl == "RF"):
+                                        print ("==> run selection is: {(information_gain>="+str(ig)+"),(Classifier="+cl+"),(Balance="+bal+"),(Fold type="+fold+"),(Minimum tress [RF only]="+str(mintree)+"),(fold_size="+str(k)+")}")
+                                    else:
+                                        print ("==> run selection is: {(information_gain>="+str(ig)+"),(Classifier="+cl+"),(Balance="+bal+"),(Fold type="+fold+"),(fold_size="+str(k)+")}")
+                                       
                                     TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_crossValidation(processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                                    result = result.append(pd.Series(["CrossAllProjects",fold,k,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
-                                    print ("--> The prediction based on the FlakeFlagger features is completed ")
+                                    result = result.append(pd.Series(["CrossAllProjects",fold,k,bal,mintree,"Flake-Flagger-Features",ig,processed_data.shape[1]-3,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
                                     print("=======================================================================")
                                 else:
-                                    TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_external_dataset(processed_data,test_processed_data,k,fold,bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name)
-                                    result = result.append(pd.Series(["CrossAllProjects","external_test_data",k,bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-1,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
-                                    print ("--> The prediction based on the FlakeFlagger features is completed ")
+                                    if (cl == "RF"):
+                                        print ("==> run selection is: {(information_gain>="+str(ig)+"),(Classifier="+cl+"),(Balance="+bal+"),(Minimum tress [RF only]="+str(mintree)+")}")
+                                    else:
+                                        print ("==> run selection is: {(information_gain>="+str(ig)+"),(Classifier="+cl+"),(Balance="+bal+")}")
+                                    
+                                    TN, FP, FN, TP, Precision, Recall, f1, auc_score,result_by_test_name  = predict_external_dataset(processed_data,test_processed_data,k,"external_test_data",bal,cl,mintree,"Flake-Flagger-Features",ig,result_by_test_name,train_model,train_models_dir)
+                                    result = result.append(pd.Series(["CrossAllProjects","external_test_data",k,bal,mintree,"Flake-Flagger-Features",ig,test_processed_data.shape[1]-3,cl,TP, FN, FP, TN, Precision, Recall, f1,auc_score], index=result.columns ), ignore_index=True)                
                                     print("=======================================================================")
     
             result_by_test_name.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_per_test.csv',  index=False)        
@@ -371,6 +422,7 @@ if __name__ == '__main__':
                 
             confusion_matrix_by_project.to_csv(output_dir+"IG_"+str(ig)+'/prediction_result_by_project.csv',  index=False)        
         else:
-            print ("--> Warning: No FlakeFlagger feature' IG larger than the given min IG ")
+            print ("--> Warning: There are no features that have at least the given min IG (" + str(ig) + ")")
+            print ("--> Skipped: Please try another IG values ")
       
     print("The process is completed in : (%s) seconds. " % round((time.time() - execution_time), 5))
