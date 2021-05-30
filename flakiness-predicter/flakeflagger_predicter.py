@@ -219,7 +219,7 @@ if __name__ == '__main__':
     #original_processed_data
     processed_data = pd.read_csv(sys.argv[4])
     
-    output_dir = "result/classification_result/"
+    output_dir = "result_1/classification_result/"
     Path(output_dir).mkdir(parents=True, exist_ok=True)    
 
     result_by_test_name_columns = ["cross_validation","balance_type","IG_min","numTrees","classifier","features_structure","test_name","Matrix_label"]    
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     fold_type = ["StratifiedKFold"]
     balance = ["SMOTE"]
     classifier = ["RF"]
-    treeSize = [5000]
+    treeSize = [250]
     minIGList = [0.01]
     ##=========================================================##
     
