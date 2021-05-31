@@ -80,9 +80,9 @@ If you have a dataset of flaky and non-flaky tests and you were able to run *Fla
 bash generate_data.sh
 ``` 
 Before that, please note that the bash file has three main parts:
-	- `projects_dir`: it is the head directory which contains all projects where we collect features from.
-	- `source_of_flaky_tests`: this is a csv file that should contain a list of flaky test names.
-	- `column_name`: it is the name of the column where flaky tests belong.
+- `projects_dir`: it is the head directory which contains all projects where we collect features from.
+- `source_of_flaky_tests`: this is a csv file that should contain a list of flaky test names.
+- `column_name`: it is the name of the column where flaky tests belong.
 
 For example, if the directory of the java projects is `~/Desktop/projects/`, the csv file of flaky tests is `~/Desktop/flaky_test_list.csv`, and the name of the column in this csv file is `test_name`, then the bash file should be updated to have these three inputs. The `result` folder should contain your generated `processed_data.csv`.
 
