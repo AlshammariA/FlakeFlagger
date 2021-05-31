@@ -96,28 +96,28 @@ There are are many possible ways to apply *FlakeFlagger* . To simplify it, we su
 
 **1. Use Cross-Validation Technique (similar to our paper)**
 	This is when you want to train *FlakeFlagger* on a **portion** on your data and predict the rest. To apply this, make sure the variables values are in `extended-predict.sh` :
-	- `training_data="result/your_processed_data.csv"`
-	- `testing_data="result/your_processed_data.csv"`  This means we use cross validation because there is no external testing dataset. 
-	- `IG_flag=True`  This means we calculate the information gain of each features based on your dataset
-	- `kfold=(10)` If you want to train on 90% of your data and predict the rest or `kfold=(5)` if you want to train on 80% of your data and predict the rest.
+		- `training_data="result/your_processed_data.csv"`
+		- `testing_data="result/your_processed_data.csv"`  This means we use cross validation because there is no external testing dataset. 
+		- `IG_flag=True`  This means we calculate the information gain of each features based on your dataset
+		- `kfold=(10)` If you want to train on 90% of your data and predict the rest or `kfold=(5)` if you want to train on 80% of your data and predict the rest.
 
 The result should be in `extended_FlakeFlagger_result/FlakeFlagger-prediction-on-your-dataset/using_cross_validation/`	
 
 **2. Use training-testing datasets**
 	This is when you have two datasets (two `processed_data.csv` files) and you want to train on one dataset and predict the second dataset. In `extended-predict.sh`, you need to make sure that:
-	- `training_data="result/your_training_processed_data.csv"`
-	- `testing_data="result/your_testing_processed_data.csv"`  
-	- `kfold=(1)` train on all training dataset .
+		- `training_data="result/your_training_processed_data.csv"`
+		- `testing_data="result/your_testing_processed_data.csv"`  
+		- `kfold=(1)` train on all training dataset .
 	and the rest should be similar to the previous part (1. Use Cross-Validation Technique). 
 
 The result should be in `extended_FlakeFlagger_result/FlakeFlagger-prediction-on-your-dataset/your_data_on_external_testing_dataset/`
 
 **3. Use our pre-trained model to predict your data** 
 	During our experiment, we saved our baseline model of *FlakeFlagger*. This model was trained on our `processed_data.csv`. To use our pre-trained model, make sure that:
-	- `training_data="result/processed_data.csv"`
-	- `testing_data="result/your_processed_data.csv"`  
-	- `IG_flag=False`  we already calculate the information gain of our dataset.
-	- `train_model=True`,`fold_type=("StratifiedKFold")` , `balance=("SMOTE")`, `classifier=("RF")`, `treeSize=(100)`, `minIGList=(0.0)`, and `kfold=(1)` 
+		- `training_data="result/processed_data.csv"`
+		- `testing_data="result/your_processed_data.csv"`  
+		- `IG_flag=False`  we already calculate the information gain of our dataset.
+		- `train_model=True`,`fold_type=("StratifiedKFold")` , `balance=("SMOTE")`, `classifier=("RF")`, `treeSize=(100)`, `minIGList=(0.0)`, and `kfold=(1)` 
 	
 The result should be in `extended_FlakeFlagger_result/FlakeFlagger-prediction-on-your-dataset/our_data_on_external_testing_dataset/`
 
