@@ -3,7 +3,7 @@
 # original FlakeFlagger dataset is "result/processed_data.csv"
 training_data="result/processed_data.csv"
 
-testing_data="your-testing-dataset.csv"
+testing_data="result/your-testing-dataset.csv"
 
 output_dir="extended_FlakeFlagger_result/FlakeFlagger-prediction-on-your-dataset"
 
@@ -38,4 +38,4 @@ export kfold=(1)
 
 
 
-python3 extended_flakeflagger_predicter.py $training_data $testing_data $output_dir $cross_validation $IG_flag $min_IG_flag $train_model "${fold_type[*]}" "${balance[@]}" "${classifier[*]}" "${treeSize[*]}" "${minIGList[*]}" "${kfold[*]}"
+python extended_flakeflagger_predicter.py $training_data $testing_data $output_dir $cross_validation $IG_flag $min_IG_flag $train_model "${fold_type[*]}" "${balance[@]}" "${classifier[*]}" "${treeSize[*]}" "${minIGList[*]}" "${kfold[*]}"

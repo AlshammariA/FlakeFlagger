@@ -4,4 +4,4 @@ DATA="result/processed_data_with_vocabulary_per_test.csv"
 output="result/Information_gain_per_feature"
 
 
-python3 compute_information_gain.py $DATA $output
+python compute_information_gain.py $DATA $output
