@@ -18,7 +18,7 @@ This is a list of input files that are required to accomplish this step:
 * `input_data/original_tests/` :
 	This directory contains the body contents of all flaky and non flaky tests. This is used to collect the token/java keywords per test. 
 
-## Choice 1: How to replicate our experiment?
+## How to replicate our experiment?
 There are three main steps to perform the prediction phase. 
 * Hint: the first two steps can be skipped as the generated files from these steps are already in the `result` directory. 
 
@@ -59,7 +59,7 @@ where the output will be under `result/classification_result/` directory which c
 - `prediction_result_by_project`: the confusion matrix split by project (similar to Table III in the paper)
 
 
-** Note: We used `minimum IG = 0.01`, `StratifiedKFold` as cross validation type, `Random Forest (RF)` as a classifier, `5000` as minimum number of trees, `SMOTE` as a balance technique, and `10%` as a number of folds. You can change the following arguments to explore the full classification result. The strucutre of these arguments comes as a list (it could be a list of size one argument or more than that). These arguments (shown in `flakeflagger_predicter.py`) are:
+** Note: We used `minimum IG = 0.01`, `StratifiedKFold` as cross validation type, `Random Forest (RF)` as a classifier, `5000` as minimum number of trees, `SMOTE` as a balance technique, and `10` as a number of folds. You can change the following arguments to explore the full classification result. The strucutre of these arguments comes as a list (it could be a list of size one argument or more than that). These arguments (shown in `flakeflagger_predicter.py`) are:
 
 	1. Classifier: `RF`, `SVM`, `DT`, `MLP`, `NB`, `KNN` 
 	2. Fold types: `StratifiedKFold` and `KFold`
@@ -70,25 +70,60 @@ where the output will be under `result/classification_result/` directory which c
 	
 
 
-## Choice 2: How to apply FlakeFlagger predictor on your data?
-If you have a dataset of flaky and non-flaky tests and you were able to run FlakeFlagger feature collector, all you need is to generate `processed_data.csv` and apply FlakeFlagger predictor. To do so, please follow the following steps.
+## How to apply FlakeFlagger predictor on your data?
 
-1. run `generate_processed_data.py` on the directory of projects contains projects. These projects should have all csv files generated from the feature collection phase. Please refer to `test-feature-collector` on how to collect features from a set of java projects. `generate_processed_data.py` script takes three arguments which are:
-	- `projects_dir`: it is the head directory which contains all projects where we collect features from.
-	- `source_of_flaky_tests`: this is a csv file that should contain a list of flaky test names
-	- `column_name`: it is the name of the column where flaky tests belong.
-For example, if the directory of the java projects is `~/Desktop/projects/`, the csv file of flaky tests is `~/Desktop/flaky_test_list.csv`, and the name of the column in this csv file is `test_name`, then the command to generate `processed_data.csv`
+### Part 1: Generate processed_data.csv
+
+If you have a dataset of flaky and non-flaky tests and you were able to run *FlakeFlagger* feature collector (Please refer to `test-feature-collector` on how to collect features from a set of java projects), all you need is to generate `processed_data.csv` by running the following command line:
 
 ```console
-python generate_processed_data.py ~/Desktop/projects/ ~/Desktop/flaky_test_list.csv test_name
+bash generate_data.sh
 ``` 
+Before that, please note that the bash file has three main parts:
+	- `projects_dir`: it is the head directory which contains all projects where we collect features from.
+	- `source_of_flaky_tests`: this is a csv file that should contain a list of flaky test names.
+	- `column_name`: it is the name of the column where flaky tests belong.
 
-2. run the FlakeFlagger predictor script `extended_flakeflagger_predicter.py` as the following:
+For example, if the directory of the java projects is `~/Desktop/projects/`, the csv file of flaky tests is `~/Desktop/flaky_test_list.csv`, and the name of the column in this csv file is `test_name`, then the bash file should be updated to have these three inputs. The `result` folder should contain your generated `processed_data.csv`.
 
+### Part 2: Apply FlakeFlagger 
+
+Running the following command will apply *FlakeFlagger* on your proposed data and the result will be in the folder `extended_FlakeFlagger_result`. 
 ```console
-python extended_flakeflagger_predicter.py result/your_processed_data.csv result/your_processed_data.csv result/
-```  
+bash extended-predict.sh
+``` 
+There are are many possible ways to apply *FlakeFlagger* . To simplify it, we summarize these ways as follow: 
 
-The `result` should contain the prediction result. Please refer to the last hint in `Choice 1: How to replicate our experiment?` section to manipulate different classification arguments. 
+**1. Use Cross-Validation Technique (similar to our paper)**
+	This is when you want to train *FlakeFlagger* on a **portion** on your data and predict the rest. To apply this, make sure the variables values are in `extended-predict.sh` :
+	- `training_data="result/your_processed_data.csv"`
+	- `testing_data="result/your_processed_data.csv"`  This means we use cross validation because there is no external testing dataset. 
+	- `IG_flag=True`  This means we calculate the information gain of each features based on your dataset
+	- `kfold=(10)` If you want to train on 90% of your data and predict the rest or `kfold=(5)` if you want to train on 80% of your data and predict the rest.
 
-** Note: using `result/your_processed_data.csv` means we do not use an external dataset for testing (the same we did in our paper by using the cross-validation). In fact, this script is capable of having an external dataset for testing. However, we encourage you to refer to the paper as we discuss that the flaky tests from `processed_data.csv` are not representing all flaky tests in java projects. 
+The result should be in `extended_FlakeFlagger_result/FlakeFlagger-prediction-on-your-dataset/using_cross_validation/`	
+
+**2. Use training-testing datasets**
+	This is when you have two datasets (two `processed_data.csv` files) and you want to train on one dataset and predict the second dataset. In `extended-predict.sh`, you need to make sure that:
+	- `training_data="result/your_training_processed_data.csv"`
+	- `testing_data="result/your_testing_processed_data.csv"`  
+	- `kfold=(1)` train on all training dataset .
+	and the rest should be similar to the previous part (1. Use Cross-Validation Technique). 
+
+The result should be in `extended_FlakeFlagger_result/FlakeFlagger-prediction-on-your-dataset/your_data_on_external_testing_dataset/`
+
+**3. Use our pre-trained model to predict your data** 
+	During our experiment, we saved our baseline model of *FlakeFlagger*. This model was trained on our `processed_data.csv`. To use our pre-trained model, make sure that:
+	- `training_data="result/processed_data.csv"`
+	- `testing_data="result/your_processed_data.csv"`  
+	- `IG_flag=False`  we already calculate the information gain of our dataset.
+	- `train_model=True`,`fold_type=("StratifiedKFold")` , `balance=("SMOTE")`, `classifier=("RF")`, `treeSize=(100)`, `minIGList=(0.0)`, and `kfold=(1)` 
+	
+The result should be in `extended_FlakeFlagger_result/FlakeFlagger-prediction-on-your-dataset/our_data_on_external_testing_dataset/`
+
+
+**Note:** 
+We highly recommend to consider applying external testing datasets on FlakeFlagger (**Step 2 and 3**) may not perform well. This is because our dataset does not capture the liklihood of the flakiness causes. However, exploring this will definitely help us to improve the current work.  
+
+**Note:**
+Test other configurations of FlakerFlagger such as using a different information gain threshold is recommended. The file  `extended-predict.sh` is designed to let you explore many factors and see their prediction results.  
