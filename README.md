@@ -28,3 +28,6 @@ that we use in our predictive model. This tooling, including a detailed readme a
 
 ## Step 2: Flakiness Prediction 
 We used the machine learning concepts to learn and predict flaky tests. This part is a classification problem and it is well explained with a readme file in the `flakiness-predicter` directory.
+
+## Dataset notes for static analysis
+As described [in our ICSE 2021 paper](https://www.jonbell.net/preprint/icse21-flakeflagger.pdf), the tests in our dataset were gathered by inspecting the logs reported by maven of which tests were executed. Static approaches that aim to analyze the method bodies of these tests may fail to locate tests, for example because they are written in another language (like Groovy) or are dynamically instantiated (using a parameterized or custom runner, or through inheritance). As [others have reported](https://github.com/AlshammariA/FlakeFlagger/pull/4), there are 453 tests in our dataset that can not be easily extracted statically.  
